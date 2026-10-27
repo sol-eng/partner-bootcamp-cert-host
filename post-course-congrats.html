@@ -1,0 +1,619 @@
+<!-- Posit Academy — Post-Course Congratulations + Completion Badge -->
+<!-- Paste this into the SkillJar rating lesson's Summary field.
+     The script injects the banner, a live-rendered completion badge, and
+     share buttons into the main lesson content area, above the rating widget.
+
+     Badge data sources (all client-side, SkillJar remains system of record):
+       - Learner name:  window.skilljarUser.name
+       - Course title:  window.skilljarCourse.title
+       - Cert link:     scraped from SkillJar's certificate anchor when the
+                        course has certificates enabled in SkillJar admin.
+-->
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;600&display=swap');
+
+/* ── Banner ── */
+#pa-congrats-banner {
+  background: linear-gradient(135deg, #17212B 0%, #3A5672 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px 48px;
+  text-align: center;
+}
+
+#pa-congrats-logo {
+  height: 60px;
+  width: auto;
+  display: block;
+  margin-bottom: 32px;
+}
+
+#pa-congrats-heading {
+  font-family: 'Open Sans', sans-serif !important;
+  font-size: clamp(28px, 5vw, 48px) !important;
+  font-weight: 500 !important;
+  color: #ffffff !important;
+  margin: 0 0 12px 0 !important;
+  line-height: 1.15 !important;
+}
+
+#pa-congrats-sub {
+  font-family: 'Open Sans', sans-serif !important;
+  font-size: clamp(14px, 2vw, 17px) !important;
+  font-weight: 400 !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+  margin: 0 !important;
+  line-height: 1.6 !important;
+  max-width: 500px !important;
+}
+
+/* Compact header — used once the badge is revealed: the dark banner gives
+   way to a plain typographic congrats on white, since the badge itself
+   carries the celebration and the brand color. */
+#pa-congrats-banner.pa-compact {
+  background: #ffffff;
+  padding: 40px 24px 4px;
+}
+.pa-compact #pa-congrats-logo { display: none; }
+.pa-compact #pa-congrats-heading {
+  color: #17212B !important;
+  font-size: 34px !important;
+  margin: 0 0 6px 0 !important;
+}
+.pa-compact #pa-congrats-sub {
+  color: #5b6a76 !important;
+  font-size: 15px !important;
+}
+
+/* Confetti button restyled when it joins the button row on white */
+.pa-congrats-btn-confetti.pa-in-row {
+  color: #17212B;
+  border-color: #F6B000 !important;
+  margin-top: 0 !important;
+}
+
+/* ── Badge section: centered card with note below ── */
+#pa-badge-row {
+  display: none;
+  background: #ffffff;
+  padding: 28px 24px 4px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+#pa-badge-row.pa-visible { display: flex; }
+
+#pa-badge-card {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px -12px rgba(23, 33, 43, 0.35);
+  line-height: 0;
+}
+
+#pa-badge-card svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+#pa-badge-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.32) 50%, transparent 58%);
+  transform: translateX(-130%);
+}
+
+#pa-badge-note {
+  font-family: 'Open Sans', sans-serif !important;
+  font-size: 12px !important;
+  color: #6c7a86 !important;
+  margin: 0 !important;
+  line-height: 1.5 !important;
+  text-align: center;
+}
+
+/* Sticker-settle entrance + one sheen sweep */
+@media (prefers-reduced-motion: no-preference) {
+  #pa-badge-card {
+    animation: pa-badge-settle 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  #pa-badge-sheen {
+    animation: pa-badge-sheen 1.4s ease-out 0.6s forwards;
+  }
+}
+
+@keyframes pa-badge-settle {
+  from { opacity: 0; transform: scale(1.05) rotate(-1.5deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes pa-badge-sheen {
+  to { transform: translateX(130%); }
+}
+
+/* ── Button row ── */
+#pa-congrats-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px 24px 32px;
+  background: #ffffff;
+}
+
+/* Normalized hard against SkillJar's site CSS so <a> and <button> render
+   identically: fixed height, flex centering, explicit line-height. */
+.pa-congrats-btn {
+  font-family: 'Open Sans', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  text-decoration: none !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  height: 48px !important;
+  padding: 0 28px !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  border: 1px solid transparent !important;
+  transition: background-color 0.15s, color 0.15s;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Primary — dark filled */
+.pa-congrats-btn-primary {
+  background: #17212B;
+  color: #ffffff;
+}
+.pa-congrats-btn-primary:hover {
+  background: #213D4F;
+  color: #ffffff;
+}
+
+/* Secondary — Academy Yellow */
+.pa-congrats-btn-secondary {
+  background: #F6B000;
+  color: #17212B;
+}
+.pa-congrats-btn-secondary:hover {
+  background: #C48F0A;
+  color: #17212B;
+}
+
+/* Ghost — quiet nav links */
+.pa-congrats-btn-ghost {
+  background: transparent;
+  color: #17212B;
+  border-color: #D1DBE5 !important;
+}
+.pa-congrats-btn-ghost:hover {
+  background: #F5F7F9;
+  color: #17212B;
+}
+
+/* Confetti trigger — outlined yellow, sits inside the dark banner */
+.pa-congrats-btn-confetti {
+  background: transparent;
+  color: #ffffff;
+  border: 2px solid #F6B000 !important;
+  cursor: pointer;
+  margin-top: 28px !important;
+}
+.pa-congrats-btn-confetti:hover {
+  background: #F6B000;
+  color: #17212B;
+}
+
+/* ── Divider between congrats and rating widget ── */
+#pa-congrats-divider {
+  height: 1px;
+  background: #E8ECEF;
+  margin: 0 24px 32px;
+}
+
+/* ── Responsive ── */
+@media only screen and (max-width: 480px) {
+  .pa-congrats-btn {
+    width: 100%;
+    text-align: center;
+  }
+  #pa-congrats-buttons {
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 20px;
+  }
+  #pa-badge-row.pa-visible {
+    padding: 24px 16px 4px;
+  }
+}
+</style>
+
+<script>
+(function () {
+  /* ── Config ── */
+  // FORK NOTE (partner-bootcamp-cert-host): this is a course-scoped copy of the
+  // partner-skilljar-theme post-course-congrats.html, loaded ONLY by the
+  // "Posit Partner Bootcamp — Certified Administrator" course's Wrap-up lesson,
+  // to issue the LinkedIn credential as Posit, PBC (org 1978648) with the
+  // company logo. The domain-wide partner theme still issues other courses as
+  // Posit Academy. Source: posit-dev/partner-skilljar-theme @ 51a5ca55.
+  var LINKEDIN_ORG_ID = '1978648';            // Posit, PBC (urn:li:fsd_company:1978648)
+  var ISSUER_NAME     = 'Posit, PBC';
+  // Base URL of the Netlify site serving the public badge page function.
+  var BADGE_PAGE_BASE = 'https://academy-partner.netlify.app';
+  var LOGO_REVERSE    = 'https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Feww6wlnql2k9y5hqbfc2ycpct%2Fpublic%2F1776479064%2Flogo_academytag-reverse.1776479063876.svg';
+
+  // Posit Partner Readiness lockup for the in-hex slot. The icon + "posit"
+  // wordmark paths below are the real official vector art (same source as
+  // the Posit logo inlined in footer.html) — not redrawn. "Partner" /
+  // "READINESS" are typeset in Open Sans (the real brand typeface) at
+  // sizes/positions eyeballed from a reference screenshot, since no combined
+  // lockup file was supplied; swap in the real asset if/when one exists.
+  // Mirror of PARTNER_READINESS_LOGO in netlify/functions/badge.mjs — keep
+  // the two in sync. Rendered ~330px wide, same footprint as the old wordmark.
+  var PARTNER_READINESS_LOGO =
+    '<g transform="translate(235 335)">' +
+    '<path d="m10.071 19.562 2.05-.913 9.265-4.129 2.021-.9 22.384-9.98v12.036l-9.051 3.886-2.047-.913 9.463-4.065V6.175L25.428 14.52l-2.021.903-9.227 4.111-2.047.913-6.528 2.909v2.159l6.429 2.868 2.046.913 9.47 4.218 2.01.895 18.596 8.289V34.2l-9.363-4.02 2.05-.912 8.948 3.842v12.12l-22.233-9.91-2.008-.895-9.53-4.244-2.048-.913-6.004-2.679v-4.305z" fill="#EE6331"/>' +
+    '<path d="m25.492 24.392 9.189-3.945-2.05-.913-11.314 4.858 11.414 4.904 2.047-.913z" fill="#EE6331"/>' +
+    '<path d="m12.034 28.383 2.046.913 9.327-4.006-2.087-.898zm2.146-8.849-2.047.913 9.187 3.945 2.087-.895z" fill="#447099"/>' +
+    '<path d="m36.74 19.562-2.047-.913-9.265-4.129-2.021-.9L1.023 3.64v12.036l9.048 3.886 2.05-.913-9.463-4.065V6.175l18.728 8.345 2.021.903 9.227 4.111 2.047.913 6.528 2.909v2.159l-6.428 2.868-2.047.913-9.47 4.218-2.011.895-18.595 8.289V34.2l9.363-4.02-2.05-.912-8.948 3.842v12.12l22.233-9.91 2.008-.895 9.53-4.244 2.048-.913 6.004-2.679v-4.305z" fill="#447099"/>' +
+    '<path d="M96.959 11.68c7.92 0 13.504 5.393 13.504 12.883S104.881 37.4 96.959 37.4c-7.923 0-13.41-5.393-13.41-12.837s5.487-12.882 13.41-12.882m0 19.279c3.77 0 6.346-2.387 6.346-6.396 0-4.008-2.862-6.441-6.346-6.441s-6.252 2.338-6.252 6.441c0 3.628 2.53 6.396 6.252 6.396M140.9 1.535c2.243 0 3.865 1.606 3.865 3.727 0 2.228-1.622 3.832-3.865 3.832-2.433 0-3.914-1.604-3.914-3.832s1.622-3.727 3.914-3.727m-3.484 10.614h6.919v24.814h-6.919zm10.043 0h4.725V6.375h6.919v5.774h7.478v6.441h-7.478v8.063c0 3.006.668 4.152 2.53 4.152 1.622 0 2.912-.573 4.247-1.622l3.525 4.37c-1.719 1.813-5.052 3.694-8.439 3.694-5.201 0-8.78-2.817-8.78-8.542V18.587h-4.725v-6.441zm-13.625 3.034c-1.696-1.627-5.213-3.73-10.209-3.73-7.115 0-11.3 2.942-11.3 7.766 0 7.488 11.926 7.67 14.743 9.322.509.284.811.68.629 1.256-.529 1.66-7.214 2.471-12.143-2.294l-4.022 4.794c1.791 2.37 5.741 5.154 12.149 5.154 5.953 0 11.1-2.412 11.1-7.91 0-4.93-4.592-6.912-8.675-8.073-1.161-.32-2.284-.583-3.256-.844-1.61-.412-3.766-.875-3.421-2.077.627-2.185 7.803-.817 10.312 1.48l4.101-4.842zM56.61 12.207h6.93V13.5c1.288-1.194 3.632-1.816 5.545-1.816 7.552 0 12.238 5.211 12.238 12.573 0 7.363-4.876 13.193-12.43 13.193-2.389 0-4.589-.382-5.354-1.244v10.422h-6.93zm6.93 8.747v7.935c.764 1.146 2.437 2.103 4.396 2.103 3.873 0 6.214-2.438 6.214-6.214 0-4.397-2.197-6.643-5.832-6.643-2.295 0-3.87 1.146-4.779 2.819" fill="#404041"/>' +
+    '<path d="M174.117 14.29c0 1.24-.974 2.213-2.241 2.213-1.266 0-2.253-.975-2.253-2.213s1-2.187 2.253-2.187 2.241.974 2.241 2.187m-3.934 0c0 .974.719 1.747 1.706 1.747.988 0 1.668-.773 1.668-1.734 0-.962-.706-1.76-1.681-1.76-.974 0-1.693.788-1.693 1.747m1.348 1.146h-.507v-2.187c.2-.041.481-.067.839-.067.415 0 .602.067.76.161.12.092.213.266.213.481 0 .24-.187.427-.453.507v.025c.212.08.332.24.399.532.066.333.107.466.161.548h-.547c-.067-.08-.108-.279-.174-.532-.041-.24-.174-.348-.453-.348h-.241v.88zm.013-1.24h.24c.279 0 .507-.093.507-.32 0-.2-.146-.333-.466-.333-.133 0-.228.013-.279.025v.627z" fill="#404041"/>' +
+    /* Baseline y=37.4 matches the posit wordmark's own baseline exactly (the
+       "o" path spans y=11.68 to 37.4). Font-size 47 makes the cap-height reach
+       up near the wordmark's own dot/ascender height, matching the reference. */
+    '<text x="182" y="37.4" font-family="\'Open Sans\', sans-serif" font-weight="400" font-size="47" fill="#404041">Partner</text>' +
+    '<text x="210" y="57" font-family="\'Open Sans\', sans-serif" font-weight="700" font-size="19" letter-spacing="2.5" fill="#EE6331">READINESS</text>' +
+    '</g>';
+
+  /* ── Data ── */
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function learnerName() {
+    if (window.skilljarUser && window.skilljarUser.name) return window.skilljarUser.name;
+    return 'Posit Academy Learner';
+  }
+
+  function courseTitle() {
+    if (window.skilljarCourse && window.skilljarCourse.title) return window.skilljarCourse.title;
+    return document.title.replace(/\s*[-–|].*$/, '');
+  }
+
+  function issueDate() {
+    return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  // SkillJar exposes the learner's certificate on lesson pages via
+  // skilljarCourseProgress.certificate.url (per SkillJar's developer-center
+  // snippet "Add Certificate View & Share to LinkedIn Buttons").
+  function findCertUrl() {
+    var p = window.skilljarCourseProgress;
+    return (p && p.certificate && p.certificate.url) ? p.certificate.url : null;
+  }
+
+  // On first completion the certificate is issued *after* this page was
+  // rendered — the rating lesson usually completes the course only when the
+  // learner submits a rating, and the post-course trigger fires after that.
+  // Re-fetch the current page for up to ~2 minutes and pull the certificate
+  // URL out of the fresh HTML once SkillJar has issued it.
+  function extractCertUrl(html) {
+    /* Normalize escaped JSON (\" and \/) so one regex covers JSON, escaped
+       JSON-in-string, and JS-literal serializations of the global. */
+    var norm = html.replace(/\\(["'\/])/g, '$1');
+    var m = norm.match(/["']?certificate["']?\s*:\s*\{[^{}]*?["']?url["']?\s*:\s*["']([^"']+)["']/);
+    return m ? m[1] : null;
+  }
+
+  function pollCertUrl(onFound) {
+    var attempts = 0;
+    var maxAttempts = 30; /* x 4s = ~2 minutes */
+    console.debug('[pa-badge] no certificate at page load; polling for one');
+    var timer = setInterval(function () {
+      attempts++;
+      if (attempts > maxAttempts) {
+        clearInterval(timer);
+        console.debug('[pa-badge] gave up polling — no certificate after ~2 min');
+        return;
+      }
+      fetch(window.location.href, { credentials: 'same-origin' })
+        .then(function (r) { return r.text(); })
+        .then(function (html) {
+          var url = extractCertUrl(html);
+          if (url) {
+            clearInterval(timer);
+            console.debug('[pa-badge] certificate found on attempt ' + attempts + ': ' + url);
+            onFound(url);
+          } else if (attempts === 1 || attempts % 5 === 0) {
+            console.debug('[pa-badge] attempt ' + attempts + ': certificate not issued yet');
+          }
+        })
+        .catch(function (e) { console.debug('[pa-badge] poll error:', e); });
+    }, 4000);
+  }
+
+  function certIdFromUrl(url) {
+    if (!url) return null;
+    var parts = url.split('/');
+    var last = parts.pop() || parts.pop(); /* tolerate trailing slash */
+    return last || null;
+  }
+
+  function linkedinUrl(shareUrl, certId) {
+    var now = new Date();
+    var q = [
+      'startTask=CERTIFICATION_NAME',
+      // With an org id set, LinkedIn shows the issuer via organizationId, so the
+      // credential name is just the course title (no "Issuer: " prefix).
+      'name=' + encodeURIComponent(LINKEDIN_ORG_ID ? courseTitle() : (ISSUER_NAME + ': ' + courseTitle())),
+      'issueYear=' + now.getFullYear(),
+      'issueMonth=' + (now.getMonth() + 1)
+    ];
+    if (LINKEDIN_ORG_ID) {
+      q.push('organizationId=' + encodeURIComponent(LINKEDIN_ORG_ID));
+    } else {
+      q.push('organizationName=' + encodeURIComponent(ISSUER_NAME));
+    }
+    if (shareUrl) {
+      q.push('certUrl=' + encodeURIComponent(shareUrl));
+      if (certId) q.push('certId=' + encodeURIComponent(certId));
+    }
+    return 'https://www.linkedin.com/profile/add?' + q.join('&');
+  }
+
+  // Public badge page (Netlify Function) — server-verified against SkillJar,
+  // shows the SVG badge instead of the PDF certificate. Falls back to the
+  // SkillJar validate URL when the pieces aren't available.
+  function buildBadgeUrl() {
+    if (!BADGE_PAGE_BASE || !window.skilljarUser || !window.skilljarUser.id) return null;
+    var course = window.skilljarCourse || {};
+    var cid = course.publishedCourseId || course.published_course_id || course.id;
+    if (!cid) return null;
+    return BADGE_PAGE_BASE + '/badge/' +
+      encodeURIComponent(window.skilljarUser.id) + '/' + encodeURIComponent(cid);
+  }
+
+  /* ── Badge SVG ── */
+  // Wrap the course title into up to 3 centered lines that fit the hex.
+  // Grow the per-line budget until everything fits in 3 lines, then size the
+  // font from the longest actual line so it can never escape the hex.
+  function wrapWords(words, maxChars) {
+    var lines = [''];
+    for (var i = 0; i < words.length; i++) {
+      var cur = lines[lines.length - 1];
+      var next = cur ? cur + ' ' + words[i] : words[i];
+      if (cur && next.length > maxChars) {
+        lines.push(words[i]);
+      } else {
+        lines[lines.length - 1] = next;
+      }
+    }
+    return lines;
+  }
+
+  function fitTitle(title) {
+    var words = title.split(/\s+/);
+    var maxChars = 14;
+    var lines = wrapWords(words, maxChars);
+    while (lines.length > 3) {
+      maxChars += 2;
+      lines = wrapWords(words, maxChars);
+    }
+    var maxLen = 1;
+    for (var j = 0; j < lines.length; j++) maxLen = Math.max(maxLen, lines[j].length);
+    /* ~535px of usable hex width; ~0.55em average glyph width at weight 600 */
+    var fs = Math.min(66, Math.floor(535 / (0.55 * maxLen)));
+    return { lines: lines, fontSize: Math.max(fs, 22) };
+  }
+
+  function hexPoints(cx, cy, r) {
+    var pts = [];
+    for (var i = 0; i < 6; i++) {
+      var a = (Math.PI / 180) * (60 * i - 90); /* point-up, like R hex stickers */
+      pts.push((cx + r * Math.cos(a)).toFixed(1) + ',' + (cy + r * Math.sin(a)).toFixed(1));
+    }
+    return pts.join(' ');
+  }
+
+  function buildBadgeSvg() {
+    var name  = esc(learnerName());
+    var date  = esc(issueDate());
+    var fit   = fitTitle(courseTitle());
+
+    /* Title tspans, vertically centered around y = 621 inside the hex */
+    var lineH  = Math.round(fit.fontSize * 1.18);
+    var firstY = 621 - ((fit.lines.length - 1) * lineH) / 2;
+    var tspans = '';
+    for (var i = 0; i < fit.lines.length; i++) {
+      tspans += '<tspan x="400" y="' + (firstY + i * lineH) + '">' + esc(fit.lines[i]) + '</tspan>';
+    }
+
+    /* Learner name scales down to fit the right column (~680px budget) */
+    var nameLen = learnerName().length;
+    var nameFs  = Math.min(68, Math.round(640 / (0.52 * Math.max(nameLen, 10))));
+
+    return [
+      '<svg viewBox="0 0 1500 1000" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Course completion badge: ',
+        esc(courseTitle()), ', presented to ', name, ', issued ', date, '">',
+
+      /* Dark navy field with a quiet oversized Posit logo mark */
+      '<rect width="1500" height="1000" fill="#17212B"/>',
+      /* Group opacity (not a translucent fill) so overlapping ribbon paths
+         composite as one flat layer instead of double-darkening where they cross. */
+      '<g transform="translate(820 380) scale(24)" fill="#ffffff" opacity="0.08">',
+        '<path d="m10.071 19.562 2.05-.913 9.265-4.129 2.021-.9 22.384-9.98v12.036l-9.051 3.886-2.047-.913 9.463-4.065V6.175L25.428 14.52l-2.021.903-9.227 4.111-2.047.913-6.528 2.909v2.159l6.429 2.868 2.046.913 9.47 4.218 2.01.895 18.596 8.289V34.2l-9.363-4.02 2.05-.912 8.948 3.842v12.12l-22.233-9.91-2.008-.895-9.53-4.244-2.048-.913-6.004-2.679v-4.305z"/>',
+        '<path d="m25.492 24.392 9.189-3.945-2.05-.913-11.314 4.858 11.414 4.904 2.047-.913z"/>',
+        '<path d="m12.034 28.383 2.046.913 9.327-4.006-2.087-.898zm2.146-8.849-2.047.913 9.187 3.945 2.087-.895z"/>',
+        '<path d="m36.74 19.562-2.047-.913-9.265-4.129-2.021-.9L1.023 3.64v12.036l9.048 3.886 2.05-.913-9.463-4.065V6.175l18.728 8.345 2.021.903 9.227 4.111 2.047.913 6.528 2.909v2.159l-6.428 2.868-2.047.913-9.47 4.218-2.011.895-18.595 8.289V34.2l9.363-4.02-2.05-.912-8.948 3.842v12.12l22.233-9.91 2.008-.895 9.53-4.244 2.048-.913 6.004-2.679v-4.305z"/>',
+      '</g>',
+
+      /* Hex sticker: light-blue body (hosts a dark-colored logo), thin orange border */
+      '<polygon points="', hexPoints(400, 500, 390), '" fill="#D1DBE5"/>',
+      '<polygon points="', hexPoints(400, 500, 360), '" fill="none" stroke="#EE6331" stroke-width="4"/>',
+
+      /* Inside the hex: wordmark, spark divider, course title */
+      PARTNER_READINESS_LOGO,
+      '<rect x="375" y="455" width="50" height="5" fill="#EE6331"/>',
+      '<text text-anchor="middle" font-family="\'Open Sans\', sans-serif" font-weight="600" font-size="', fit.fontSize,
+        '" fill="#404041">', tspans, '</text>',
+
+      /* Right column: code-comment eyebrow, presented-to, name, rule, issued */
+      '<text x="800" y="392" font-family="\'Source Code Pro\', monospace" font-weight="400" font-size="27" fill="#ffffff"># course completed</text>',
+      '<text x="800" y="480" font-family="\'Open Sans\', sans-serif" font-weight="400" font-size="32" fill="#ffffff">Presented to</text>',
+      '<text x="800" y="', (480 + 16 + nameFs), '" font-family="\'Open Sans\', sans-serif" font-weight="600" font-size="', nameFs,
+        '" fill="#ffffff">', name, '</text>',
+      '<rect x="800" y="608" width="220" height="3" fill="#EE6331"/>',
+      '<text x="800" y="676" font-family="\'Source Code Pro\', monospace" font-weight="600" font-size="23" letter-spacing="3" fill="#ffffff">ISSUED ',
+        date.toUpperCase(), '</text>',
+
+      '</svg>'
+    ].join('');
+  }
+
+  /* ── Confetti ── */
+  function loadConfetti(cb) {
+    if (window.confetti) { cb(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js';
+    s.onload = cb;
+    document.head.appendChild(s);
+  }
+
+  function fireConfetti() {
+    var colors = ['#F6B000', '#F4C540', '#447099', '#D1DBE5', '#ffffff', '#ED632F', '#EDCCBF'];
+    var count  = 180;
+    var origin = {
+      x: Math.random(),
+      y: Math.random() * 0.4 + 0.3
+    };
+    function fire(ratio, opts) {
+      confetti(Object.assign({
+        particleCount: Math.floor(count * ratio),
+        colors: colors,
+        origin: origin
+      }, opts));
+    }
+    fire(0.25, { spread: 26,  startVelocity: 55 });
+    fire(0.20, { spread: 60 });
+    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+    fire(0.10, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+    fire(0.10, { spread: 120, startVelocity: 45 });
+  }
+
+  /* ── Injection ── */
+  function injectCongrats() {
+    if (document.getElementById('pa-congrats-banner')) return; /* already injected */
+
+    var target = document.getElementById('lesson-main-content');
+    if (!target) return;
+
+    var wrapper = document.createElement('div');
+    wrapper.innerHTML = [
+      '<div id="pa-congrats-banner">',
+        '<img id="pa-congrats-logo"',
+             'src="', LOGO_REVERSE, '"',
+             'alt="Academy by Posit">',
+        '<div id="pa-congrats-copy">',
+          '<h1 id="pa-congrats-heading">Congratulations!</h1>',
+          '<p id="pa-congrats-sub">You\'ve completed this course. Use the links below to continue your learning journey.</p>',
+        '</div>',
+        '<button id="pa-confetti-btn" class="pa-congrats-btn pa-congrats-btn-confetti">Fire Confetti</button>',
+      '</div>',
+      /* Badge row stays hidden unless this course issues a certificate —
+         courses without one get the plain congrats banner + nav buttons.
+         Card and action rail sit side by side so SkillJar's rating widget
+         below stays near the fold. */
+      '<div id="pa-badge-row">',
+        '<div id="pa-badge-card">',
+          buildBadgeSvg(),
+          '<span id="pa-badge-sheen" aria-hidden="true"></span>',
+        '</div>',
+        '<p id="pa-badge-note">Anyone with the verification link can confirm this badge is yours.</p>',
+      '</div>',
+      '<div id="pa-congrats-buttons">',
+        '<a id="pa-btn-linkedin" class="pa-congrats-btn pa-congrats-btn-primary" style="display:none;" href="', esc(linkedinUrl(null)), '" target="_blank" rel="noopener">Add to LinkedIn</a>',
+        '<button id="pa-btn-copy" class="pa-congrats-btn pa-congrats-btn-secondary" style="display:none;">Copy verification link</button>',
+        '<a class="pa-congrats-btn pa-congrats-btn-ghost" href="https://partners.posit.co/page/all-courses" target="_self">Browse All Courses</a>',
+        '<a class="pa-congrats-btn pa-congrats-btn-ghost" href="https://partners.posit.co" target="_self">Home</a>',
+      '</div>',
+      '<div id="pa-congrats-divider"></div>'
+    ].join('');
+
+    target.insertBefore(wrapper, target.firstChild);
+
+    var btn = document.getElementById('pa-confetti-btn');
+    if (btn) btn.addEventListener('click', function () { loadConfetti(fireConfetti); });
+
+    // Reveal the cert-dependent UI once we have a verification URL — right
+    // away on a revisit, or via pollCertUrl on first completion while
+    // SkillJar issues the certificate in the background.
+    function wireCert(url) {
+      if (!url) return;
+      var shareUrl = buildBadgeUrl() || url;
+      var banner = document.getElementById('pa-congrats-banner');
+      if (banner) banner.classList.add('pa-compact'); /* badge carries the celebration now */
+      var row = document.getElementById('pa-badge-row');
+      if (row) row.classList.add('pa-visible'); /* settle/sheen animations play on reveal */
+      var sub = document.getElementById('pa-congrats-sub');
+      if (sub) sub.textContent = 'You’ve completed this course. Share your achievement or keep exploring.';
+      var li = document.getElementById('pa-btn-linkedin');
+      if (li) {
+        li.href = linkedinUrl(shareUrl, certIdFromUrl(url));
+        li.style.display = '';
+      }
+      var copyBtn = document.getElementById('pa-btn-copy');
+      if (copyBtn) {
+        copyBtn.style.display = '';
+        copyBtn.addEventListener('click', function () {
+          navigator.clipboard.writeText(shareUrl).then(function () {
+            copyBtn.textContent = 'Copied!';
+            setTimeout(function () { copyBtn.textContent = 'Copy verification link'; }, 2000);
+          });
+        });
+      }
+      /* confetti button joins the button row, after Copy verification link */
+      var confettiBtn = document.getElementById('pa-confetti-btn');
+      if (confettiBtn && copyBtn) {
+        confettiBtn.classList.add('pa-in-row');
+        copyBtn.parentNode.insertBefore(confettiBtn, copyBtn.nextSibling);
+      }
+    }
+
+    var certUrl = findCertUrl();
+    if (certUrl) {
+      wireCert(certUrl);
+    } else {
+      pollCertUrl(wireCert);
+    }
+
+    loadConfetti(fireConfetti);
+  }
+
+  /* Run after DOMContentLoaded, then retry after load to catch SkillJar's async render */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectCongrats);
+  } else {
+    injectCongrats();
+  }
+  window.addEventListener('load', function () {
+    setTimeout(injectCongrats, 300);
+  });
+}());
+</script>
+<!-- END Posit Academy Post-Course Congratulations + Badge -->
